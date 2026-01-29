@@ -16,7 +16,7 @@ The focus of the project was on writing a clean code, avoiding data leakage and 
 - Why are pipelines so important ofr preventing data leakage
 - To train models using different parts of data to avoid overfitting
 ## Files
-- `pengvini_konacni.py`: main Python script
+- `pingvini_konacni.py`: main Python script
 - `data/penguins.csv`: dataset
 
 ## Usage
