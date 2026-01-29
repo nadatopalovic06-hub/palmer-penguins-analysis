@@ -1,4 +1,4 @@
-"""
+uins"""
 Penguin Species Classification
 Author: Nada Topalović
 
@@ -25,7 +25,7 @@ from sklearn.metrics import accuracy_score, classification_report, confusion_mat
 from sklearn.decomposition import PCA
 
 # Load dataset
-penguins = pd.read_csv("pingvini_konacni.txt")
+penguins = pd.read_csv("penguins.txt")
 # Quick inspection of the dataset
 print("First five rows:")
 print(penguins.head())
@@ -176,6 +176,7 @@ print(f"Model: {najbolji['Model']}")
 print(f"Prediktori: {najbolji['Prediktori']}")
 print(f"Test tačnost: {najbolji['Tačnost (test)']:.3f}")
 print(f"CV tačnost: {najbolji['Prosečna CV tačnost']:.3f}")
+
 
 
 
