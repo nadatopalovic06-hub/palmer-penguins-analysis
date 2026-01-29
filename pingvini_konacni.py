@@ -1,18 +1,21 @@
-# -*- coding: utf-8 -*-
 """
-Created on Fri Dec 19 19:36:45 2025
+Penguin Species Classification
+Author: Nada Topalović
 
-@author: nadat
+This project demonstrates an end-to-end machine learning workflow:
+- Exploratory Data Analysis (EDA)
+- Feature preprocessing and encoding
+- Dimensionality reduction (PCA)
+- Model training using pipelines
+- Model evaluation with cross-validation
+
+Special attention is paid to preventing data leakage.
 """
-# penguins_classification_clean.py
-# Klasifikacija pingvina – čisto rešenje bez data leakage
-
+# Data handling and visualization
 import pandas as pd
-#rad sa tabelama
 import matplotlib.pyplot as plt
-#crtanje grafika
 import seaborn as sns
-#lepsi grafikoni baziran na matplotlib
+# Machine learning tools
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
@@ -20,55 +23,49 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.decomposition import PCA
-#sklearn=biblioteka za masinsko ucenje
-# 1. UČITAVANJE PODATAKA
-penguins = pd.read_csv("C:\\Users\\nadat\\Desktop\\penguins.txt")
-#cita fajl i pravi tabelu (DataFrame)
-print("Prvih 5 redova:")
-print(penguins.head())
-#prikazuje prvih pet redova (po defaultu) da vidimo dal se sve dobro ucitalo
-print("\nBroj pingvina po vrsti:")
-print(penguins['species'].value_counts())
-#Broji koliko ima pingvina svake vrste da bi kladse bile balansirane
-# 2. VIZUALIZACIJE (EDA)
 
-# Pairplot (numeričke osobine)
+# Load dataset
+penguins = pd.read_csv("data/penguins.csv")
+# Quick inspection of the dataset
+print("First five rows:")
+print(penguins.head())
+print("\nNumber of samples per species:")
+print(penguins['species'].value_counts())
+
+
+# Exploratory Data Analysis (EDA)
+# Pairwise relationships between numerical features, colored by species
 sns.pairplot(
     penguins.dropna(),
     hue="species",
     diag_kind="kde",
     markers=['o', 's', 'D'])
-plt.suptitle("Odnos numeričkih karakteristika po vrsti", y=1.02)
+plt.suptitle("Pairwise relationships between numerical features", y=1.02)
 plt.show()
-#crta svaki numericki atribut protiv svakog, boje=vrste pingvina
-# Bar chart: ostrvo vs vrsta
 plt.figure(figsize=(8, 6))
+# Distribution of species across islands
 sns.countplot(data=penguins, x="island", hue="species")
-#koliko pingvina svake vrste ima na svakom ostrvu
-plt.title("Raspodela pingvina po ostrvu i vrsti")
+plt.title("Species distribution across islands")
 plt.show()
 
-# Heatmap korelacija
 plt.figure(figsize=(8, 6))
+# Correlation matrix of numerical features
 sns.heatmap(
     penguins.select_dtypes(include="number").corr(),
     annot=True,
     fmt=".2f",
     cmap="coolwarm")
-plt.title("Korelacija numeričkih osobina")
+plt.title("Correlation of numerical features")
 plt.show()
-#koliko su nam numericke kolone povezane 1=jaka veza, 0=slaba veza, -1 obrnuta veza
-# Boxplot dužine peraja
+
 plt.figure(figsize=(8, 6))
 sns.boxplot(data=penguins, x="species", y="flipper_length_mm")
-plt.title("Dužina peraja po vrsti")
+plt.title("Flipper length by species")
 plt.show()
-#"poredi duzinu peraja po vrsti, ako se boxplotovi ne preklapaju
-#"puno odlican prediktor""
-# 3. PCA 2D PROJEKCIJA (sa skaliranjem)
 
+# Remove missing values
 penguins_clean = penguins.dropna().copy()
-#brisemo redove bez vrednosti jer ML modeli ne znaju da rade sa pravim vrednostima
+# Select numerical features
 numerical_cols = [
     'bill_length_mm',
     'bill_depth_mm',
@@ -77,39 +74,37 @@ numerical_cols = [
 
 X_num = penguins_clean[numerical_cols]
 X_num_scaled = StandardScaler().fit_transform(X_num)
-#da bi sve kolone imale slican opseg
+
+# PCA for 2D geometric visualization
 pca = PCA(n_components=2)
 X_pca = pca.fit_transform(X_num_scaled)
-#pcasmanji 4 dimenzije na dve da mozemo crtati
 plt.figure(figsize=(8, 6))
 sns.scatterplot(
     x=X_pca[:, 0],
     y=X_pca[:, 1],
     hue=penguins_clean['species'])
-plt.title("PCA 2D projekcija numeričkih osobina")
+plt.title("2D PCA projection of numerical features")
 plt.xlabel("PC1")
 plt.ylabel("PC2")
 plt.show()
-# 4. PREPROCESIRANJE ZA MODELE
-# One-hot encoding za kategorijske promenljive
+
+# One-hot encode categorical features
 penguins_model = pd.get_dummies(
     penguins_clean,
     columns=['island', 'sex'],
     drop_first=True)
-#pretvara tekst u boje
 X = penguins_model.drop(columns=['species'])
-#x ulaz
 y = penguins_model['species']
-#y ono sto predvidjamo
-# 5. TRAIN / TEST SPLIT
+
+# Stratified train-test split to preserve class distribution
 X_train, X_test, y_train, y_test = train_test_split(
     X, y,
-    test_size=0.2,#20% podataka ide u test 80% ostaje za train
+    test_size=0.2,
     stratify=y,
-    random_state=42)#sluzi da bi bilo nasumicno
-#TRAIN → za učenje modela
-#TEST → za proveru koliko je model dobar
-# 6. LOGISTIČKA REGRESIJA (PIPELINE)
+    random_state=42)
+
+# Pipeline ensures scaling is applied only on training data
+# Prevents data leakage during evaluation
 pipe_lr = Pipeline([
     ('scaler', StandardScaler()),
     ('lr', LogisticRegression(max_iter=500))])
@@ -117,26 +112,25 @@ pipe_lr = Pipeline([
 pipe_lr.fit(X_train, y_train)
 y_pred_lr = pipe_lr.predict(X_test)
 
-print("\n=== LOGISTIČKA REGRESIJA ===")
-print("Tačnost:", accuracy_score(y_test, y_pred_lr))
+print("\n=== LOGISTIC REGRESSION ===")
+print("Accuracy:", accuracy_score(y_test, y_pred_lr))
 print("\nClassification report:")
 print(classification_report(y_test, y_pred_lr))
 print("\nConfusion matrix:")
 print(confusion_matrix(y_test, y_pred_lr))
 
 cv_lr = cross_val_score(pipe_lr, X, y, cv=5)
-print("Prosečna CV tačnost (5-fold):", cv_lr.mean())
+print("Mean CV accuracy (5-fold):", cv_lr.mean())
 
-# 7. POREĐENJE VIŠE MODELA I PREDIKTORA
 
 feature_sets = {
-    "Sve kolone": X.columns.tolist(),
-    "Bez pola": [c for c in X.columns if not c.startswith('sex_')],
-    "Bez ostrva": [c for c in X.columns if not c.startswith('island_')],
-    "Samo numerički": numerical_cols}
+    "All feautures": X.columns.tolist(),
+    "Without sex": [c for c in X.columns if not c.startswith('sex_')],
+    "Without island": [c for c in X.columns if not c.startswith('island_')],
+    "Numerical only": numerical_cols}
 
 models = {
-    "Logistička regresija": LogisticRegression(max_iter=500),
+    "Logistic Regression": LogisticRegression(max_iter=500),
     "KNN (k=5)": KNeighborsClassifier(n_neighbors=5)}
 
 rezultati = []
@@ -173,13 +167,14 @@ rezultati_df = pd.DataFrame(rezultati).sort_values(
     by="Prosečna CV tačnost",
     ascending=False)
 
-print("\n=== UPOREDNI REZULTATI MODELA ===")
+print("\n=== MODEL COMPARISON RESULTS ===")
 print(rezultati_df)
 
 najbolji = rezultati_df.iloc[0]
-print("\n=== NAJBOLJI MODEL PO CV ===")
+print("\n=== BEST MODEL BY CV ===")
 print(f"Model: {najbolji['Model']}")
 print(f"Prediktori: {najbolji['Prediktori']}")
 print(f"Test tačnost: {najbolji['Tačnost (test)']:.3f}")
 print(f"CV tačnost: {najbolji['Prosečna CV tačnost']:.3f}")
+
 
